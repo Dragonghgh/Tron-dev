@@ -15,12 +15,16 @@ let p1, p2;
 let player1Started = false;
 let player2Started = false;
 
+// 1P Level System
+let level = 1;
+let baseAISpeed = 5;  // AI base speed in pixels per frame
+
 // Scores
 let score1 = 0;
 let score2 = 0;
 const WIN_SCORE = 3;
 
-// Default player colors
+// Player colors
 let playerColors = { p1: "cyan", p2: "orange" };
 
 // Trail length
@@ -30,7 +34,7 @@ const TRAIL_MAX_LENGTH = 100;
 const GRID_SIZE = 40;
 let gridOffset = 0;
 
-// Particles for crashes
+// Crash particles
 let particles = [];
 
 document.addEventListener("keydown", e => {
@@ -79,7 +83,7 @@ function createPlayer(x, y, color, dir) {
   return { x, y, color, dir, trail: [] };
 }
 
-// KEY HANDLER
+// HANDLE KEY INPUT
 function handleKey(key) {
   if (!player1Started) player1Started = true;
   if (!player2Started && mode === "2p") player2Started = true;
@@ -133,11 +137,12 @@ function movePlayer(p, started) {
   if (p.trail.length > TRAIL_MAX_LENGTH) p.trail.shift();
 }
 
-// SIMPLE AI
+// MOVE AI (1P) – faster each level
 function moveAI() {
   if (mode !== "1p") return;
   if (!player1Started) return;
 
+  const aiSpeed = baseAISpeed + level - 1; // increase with level
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
 
@@ -145,10 +150,10 @@ function moveAI() {
 
   let nextX = p2.x;
   let nextY = p2.y;
-  if (preferredDir === "up") nextY -= SPEED;
-  if (preferredDir === "down") nextY += SPEED;
-  if (preferredDir === "left") nextX -= SPEED;
-  if (preferredDir === "right") nextX += SPEED;
+  if (preferredDir === "up") nextY -= aiSpeed;
+  if (preferredDir === "down") nextY += aiSpeed;
+  if (preferredDir === "left") nextX -= aiSpeed;
+  if (preferredDir === "right") nextX += aiSpeed;
 
   if (!isBlocked(nextX, nextY)) p2.dir = preferredDir;
   else {
@@ -157,10 +162,10 @@ function moveAI() {
     for (let i=1;i<=3;i++) {
       const testDir = dirs[(idx+i)%4];
       let tx = p2.x, ty = p2.y;
-      if (testDir === "up") ty -= SPEED;
-      if (testDir === "down") ty += SPEED;
-      if (testDir === "left") tx -= SPEED;
-      if (testDir === "right") tx += SPEED;
+      if (testDir === "up") ty -= aiSpeed;
+      if (testDir === "down") ty += aiSpeed;
+      if (testDir === "left") tx -= aiSpeed;
+      if (testDir === "right") tx += aiSpeed;
       if (!isBlocked(tx, ty)) { p2.dir = testDir; break; }
     }
   }
@@ -242,24 +247,31 @@ function drawGrid() {
 // ROUND OVER
 function roundOver(winnerColor) {
   gameOver = true;
-  if (winnerColor === playerColors.p1) score1++;
-  else score2++;
+  if (winnerColor === playerColors.p1) {
+    score1++;
+    if (mode === "1p") level++; // increase level in 1P mode
+  } else {
+    score2++;
+  }
 
-  if (score1 >= WIN_SCORE) showMatchWinner(playerColors.p1);
-  else if (score2 >= WIN_SCORE) showMatchWinner(playerColors.p2);
-  else setTimeout(startRound, 1000);
+  setTimeout(startRound, 1000);
 }
 
-// DRAW SCORE ON TOP
+// DRAW SCORE + LEVEL
 function drawScore() {
   ctx.font = "24px Arial";
   ctx.fillStyle = playerColors.p1;
   ctx.fillText(`Player 1: ${score1}`, 20, 30);
   ctx.fillStyle = playerColors.p2;
   ctx.fillText(`Player 2: ${score2}`, canvas.width - 140, 30);
+
+  if (mode === "1p") {
+    ctx.fillStyle = "white";
+    ctx.fillText(`Level: ${level}`, canvas.width/2 - 40, 30);
+  }
 }
 
-// MATCH WINNER
+// SHOW MATCH WINNER
 function showMatchWinner(color) {
   canvas.style.display = "none";
   winScreen.style.display = "flex";
