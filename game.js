@@ -14,6 +14,11 @@ let p1, p2;
 let player1Started = false;
 let player2Started = false;
 
+// Scores
+let score1 = 0;
+let score2 = 0;
+const WIN_SCORE = 3; // First to 3 wins match
+
 document.addEventListener("keydown", e => {
   if (!gameOver) handleKey(e.key);
 });
@@ -28,14 +33,19 @@ function startGame(speed) {
   SPEED = speed;
   select.style.display = "none";
   canvas.style.display = "block";
+  startRound();
+}
 
-  // Start players apart and stationary
-  p1 = createPlayer(100, 250, "cyan", null);
-  p2 = createPlayer(700, 250, "orange", null);
-
+function startRound() {
+  gameOver = false;
   player1Started = false;
   player2Started = false;
 
+  // Reset positions and trails
+  p1 = createPlayer(100, 250, "cyan", null);
+  p2 = createPlayer(700, 250, "orange", null);
+
+  drawScore();
   requestAnimationFrame(loop);
 }
 
@@ -52,13 +62,13 @@ function handleKey(key) {
   if (!player1Started) player1Started = true;
   if (!player2Started && mode === "2p") player2Started = true;
 
-  // Player 1 keys
+  // Player 1
   if (key === "w" && p1.dir !== "down") p1.dir = "up";
   if (key === "s" && p1.dir !== "up") p1.dir = "down";
   if (key === "a" && p1.dir !== "right") p1.dir = "left";
   if (key === "d" && p1.dir !== "left") p1.dir = "right";
 
-  // Player 2 keys
+  // Player 2
   if (mode === "2p") {
     if (key === "ArrowUp" && p2.dir !== "down") p2.dir = "up";
     if (key === "ArrowDown" && p2.dir !== "up") p2.dir = "down";
@@ -67,7 +77,6 @@ function handleKey(key) {
   }
 }
 
-// Check if a position will collide with wall or any trail
 function isBlocked(x, y) {
   if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
   const allTrails = p1.trail.concat(p2.trail);
@@ -77,7 +86,6 @@ function isBlocked(x, y) {
   return false;
 }
 
-// Move player in grid direction
 function movePlayer(p, started) {
   if (!started || !p.dir) return;
 
@@ -90,7 +98,7 @@ function movePlayer(p, started) {
   if (p.dir === "right") nextX += SPEED;
 
   if (isBlocked(nextX, nextY)) {
-    endGame(p.color === "cyan" ? "ORANGE WINS" : "CYAN WINS");
+    roundOver(p.color === "cyan" ? "ORANGE" : "CYAN");
     return;
   }
 
@@ -99,12 +107,10 @@ function movePlayer(p, started) {
   p.trail.push({ x: p.x, y: p.y });
 }
 
-// AI logic
 function moveAI() {
   if (mode !== "1p") return;
   if (!player1Started) return;
 
-  // Attempt to move toward player, prefer horizontal if farther
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
 
@@ -126,7 +132,6 @@ function moveAI() {
   if (!isBlocked(nextX, nextY)) {
     p2.dir = preferredDir;
   } else {
-    // Try a safe turn: clockwise or counter-clockwise
     const dirs = ["up","right","down","left"];
     let idx = dirs.indexOf(p2.dir);
     for (let i=1;i<=3;i++) {
@@ -155,11 +160,35 @@ function drawPlayer(p) {
   if (p.dir) ctx.fillRect(p.x, p.y, SPEED, SPEED);
 }
 
-function endGame(text) {
+// Round ends, update score
+function roundOver(winnerColor) {
   gameOver = true;
+  if (winnerColor === "CYAN") score1++;
+  else score2++;
+
+  drawScore();
+
+  if (score1 >= WIN_SCORE) showMatchWinner("CYAN");
+  else if (score2 >= WIN_SCORE) showMatchWinner("ORANGE");
+  else {
+    // Reset round after 1 second
+    setTimeout(startRound, 1000);
+  }
+}
+
+function drawScore() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = "24px Arial";
+  ctx.fillStyle = "cyan";
+  ctx.fillText(`CYAN: ${score1}`, 20, 30);
+  ctx.fillStyle = "orange";
+  ctx.fillText(`ORANGE: ${score2}`, canvas.width - 120, 30);
+}
+
+function showMatchWinner(color) {
   canvas.style.display = "none";
   winScreen.style.display = "flex";
-  winnerText.textContent = text;
+  winnerText.textContent = `${color} WINS THE MATCH!`;
 }
 
 function loop() {
@@ -173,6 +202,13 @@ function loop() {
 
   drawPlayer(p1);
   drawPlayer(p2);
+
+  // Draw score each frame
+  ctx.font = "24px Arial";
+  ctx.fillStyle = "cyan";
+  ctx.fillText(`CYAN: ${score1}`, 20, 30);
+  ctx.fillStyle = "orange";
+  ctx.fillText(`ORANGE: ${score2}`, canvas.width - 120, 30);
 
   setTimeout(() => requestAnimationFrame(loop), 50);
 }
