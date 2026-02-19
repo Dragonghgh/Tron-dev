@@ -2,28 +2,24 @@ body {
   margin: 0;
   background: black;
   font-family: Arial, sans-serif;
+  color: cyan;
+  text-align: center;
   overflow: hidden;
 }
 
-/* MENU */
-#menu {
+/* SCREENS */
+#menu, #select, #win {
   position: fixed;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: black;
-  animation: fadeIn 1s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-/* TRON GRID */
-#menu::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(rgba(0,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,255,0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
+#select, #win {
+  display: none;
 }
 
 /* NEON LINES */
@@ -32,92 +28,53 @@ body {
   top: 0;
   width: 4px;
   height: 100%;
-  animation: pulse 2.5s infinite alternate;
 }
 
 .line.blue {
   left: 40px;
-  background: #00ffff;
-  box-shadow: 0 0 20px #00ffff;
+  background: cyan;
+  box-shadow: 0 0 20px cyan;
 }
 
 .line.orange {
   right: 40px;
-  background: #ff8800;
-  box-shadow: 0 0 20px #ff8800;
-}
-
-/* CENTER CONTENT */
-.menu-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
+  background: orange;
+  box-shadow: 0 0 20px orange;
 }
 
 /* TITLE */
 .title {
   font-size: 80px;
-  color: #00ffff;
-  letter-spacing: 10px;
-  text-shadow:
-    0 0 15px #00ffff,
-    0 0 30px #00ffff;
+  text-shadow: 0 0 30px cyan;
   margin-bottom: 40px;
 }
 
 /* BUTTONS */
 .btn {
-  width: 240px;
-  margin: 15px auto;
+  width: 220px;
   padding: 15px;
+  margin: 10px;
   font-size: 18px;
   background: black;
+  border: 2px solid cyan;
+  color: cyan;
   cursor: pointer;
-  border: 2px solid;
-  transition: all 0.25s ease;
-}
-
-.btn.blue {
-  color: #00ffff;
-  border-color: #00ffff;
-  box-shadow: 0 0 10px #00ffff;
-}
-
-.btn.orange {
-  color: #ff8800;
-  border-color: #ff8800;
-  box-shadow: 0 0 10px #ff8800;
 }
 
 .btn:hover {
-  transform: scale(1.05);
-  background: currentColor;
+  background: cyan;
   color: black;
 }
 
-/* CREDITS */
-.credits {
-  margin-top: 30px;
-  font-size: 14px;
-  color: #777;
-}
-
-/* GAME CANVAS */
+/* CANVAS */
 canvas {
   display: none;
   margin: auto;
-  border: 2px solid #00ffff;
+  border: 2px solid cyan;
 }
 
-/* ANIMATIONS */
-@keyframes pulse {
-  from { opacity: 0.6; }
-  to { opacity: 1; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* WIN */
+#winnerText {
+  font-size: 60px;
+  text-shadow: 0 0 25px cyan;
 }
