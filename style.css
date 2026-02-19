@@ -8,7 +8,7 @@ body {
 }
 
 /* SCREENS */
-#menu, #select, #win {
+#menu, #select, #win, #colorSelect {
   position: fixed;
   inset: 0;
   display: flex;
@@ -18,7 +18,7 @@ body {
   background: black;
 }
 
-#select, #win {
+#select, #win, #colorSelect {
   display: none;
 }
 
@@ -63,6 +63,37 @@ body {
 
 .btn:hover {
   background: cyan;
+  color: black;
+}
+
+/* COLOR SELECTION */
+.color-options {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.color-btn {
+  width: 150px;
+  height: 50px;
+  font-size: 18px;
+  border: 2px solid white;
+  background: black;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.color-btn.cyan {
+  border-color: cyan;
+  color: cyan;
+}
+.color-btn.orange {
+  border-color: orange;
+  color: orange;
+}
+
+.color-btn:hover {
+  background: currentColor;
   color: black;
 }
 
