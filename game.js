@@ -29,7 +29,7 @@ function startGame(speed) {
   select.style.display = "none";
   canvas.style.display = "block";
 
-  // Players start apart and stationary
+  // Start players apart and stationary
   p1 = createPlayer(100, 250, "cyan", null);
   p2 = createPlayer(700, 250, "orange", null);
 
@@ -49,7 +49,6 @@ function createPlayer(x, y, color, dir) {
 }
 
 function handleKey(key) {
-  // Player 1 starts moving on input
   if (!player1Started) player1Started = true;
   if (!player2Started && mode === "2p") player2Started = true;
 
@@ -68,49 +67,84 @@ function handleKey(key) {
   }
 }
 
-function movePlayer(p, started) {
-  if (!started || !p.dir) return; // stay still if not started
-
-  if (p.dir === "up") p.y -= SPEED;
-  if (p.dir === "down") p.y += SPEED;
-  if (p.dir === "left") p.x -= SPEED;
-  if (p.dir === "right") p.x += SPEED;
-
-  p.trail.push({ x: p.x, y: p.y });
-
-  // Wall collision
-  if (p.x < 0 || p.x >= canvas.width || p.y < 0 || p.y >= canvas.height) {
-    endGame(p.color === "cyan" ? "ORANGE WINS" : "CYAN WINS");
-  }
-
-  // Trail collision (ignore last block)
+// Check if a position will collide with wall or any trail
+function isBlocked(x, y) {
+  if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
   const allTrails = p1.trail.concat(p2.trail);
-  for (let i = 0; i < allTrails.length - 1; i++) {
-    const t = allTrails[i];
-    if (Math.abs(p.x - t.x) < SPEED && Math.abs(p.y - t.y) < SPEED) {
-      endGame(p.color === "cyan" ? "ORANGE WINS" : "CYAN WINS");
-    }
+  for (let t of allTrails) {
+    if (Math.abs(x - t.x) < SPEED && Math.abs(y - t.y) < SPEED) return true;
   }
+  return false;
 }
 
-// AI only moves after Player 1 starts
+// Move player in grid direction
+function movePlayer(p, started) {
+  if (!started || !p.dir) return;
+
+  let nextX = p.x;
+  let nextY = p.y;
+
+  if (p.dir === "up") nextY -= SPEED;
+  if (p.dir === "down") nextY += SPEED;
+  if (p.dir === "left") nextX -= SPEED;
+  if (p.dir === "right") nextX += SPEED;
+
+  if (isBlocked(nextX, nextY)) {
+    endGame(p.color === "cyan" ? "ORANGE WINS" : "CYAN WINS");
+    return;
+  }
+
+  p.x = nextX;
+  p.y = nextY;
+  p.trail.push({ x: p.x, y: p.y });
+}
+
+// AI logic
 function moveAI() {
   if (mode !== "1p") return;
   if (!player1Started) return;
 
+  // Attempt to move toward player, prefer horizontal if farther
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
 
-  // Decide horizontal or vertical first
+  let preferredDir;
   if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 0 && p2.dir !== "left") p2.dir = "right";
-    else if (dx < 0 && p2.dir !== "right") p2.dir = "left";
+    preferredDir = dx > 0 ? "right" : "left";
   } else {
-    if (dy > 0 && p2.dir !== "up") p2.dir = "down";
-    else if (dy < 0 && p2.dir !== "down") p2.dir = "up";
+    preferredDir = dy > 0 ? "down" : "up";
   }
 
-  player2Started = true; // AI now starts
+  // Check if preferred direction is blocked
+  let nextX = p2.x;
+  let nextY = p2.y;
+  if (preferredDir === "up") nextY -= SPEED;
+  if (preferredDir === "down") nextY += SPEED;
+  if (preferredDir === "left") nextX -= SPEED;
+  if (preferredDir === "right") nextX += SPEED;
+
+  if (!isBlocked(nextX, nextY)) {
+    p2.dir = preferredDir;
+  } else {
+    // Try a safe turn: clockwise or counter-clockwise
+    const dirs = ["up","right","down","left"];
+    let idx = dirs.indexOf(p2.dir);
+    for (let i=1;i<=3;i++) {
+      const testDir = dirs[(idx+i)%4];
+      let tx = p2.x;
+      let ty = p2.y;
+      if (testDir === "up") ty -= SPEED;
+      if (testDir === "down") ty += SPEED;
+      if (testDir === "left") tx -= SPEED;
+      if (testDir === "right") tx += SPEED;
+      if (!isBlocked(tx, ty)) {
+        p2.dir = testDir;
+        break;
+      }
+    }
+  }
+
+  player2Started = true;
 }
 
 function drawPlayer(p) {
