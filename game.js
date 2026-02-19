@@ -8,9 +8,11 @@ const winnerText = document.getElementById("winnerText");
 
 let mode = null;
 let gameOver = false;
-let SPEED = 10; // grid step = 10px
+let SPEED = 10;
 
 let p1, p2;
+let player1Started = false;
+let player2Started = false;
 
 document.addEventListener("keydown", e => {
   if (!gameOver) handleKey(e.key);
@@ -27,9 +29,12 @@ function startGame(speed) {
   select.style.display = "none";
   canvas.style.display = "block";
 
-  // Start players in open space
-  p1 = createPlayer(100, 250, "cyan", "right");
-  p2 = createPlayer(700, 250, "orange", "left");
+  // Players start apart and stationary
+  p1 = createPlayer(100, 250, "cyan", null);
+  p2 = createPlayer(700, 250, "orange", null);
+
+  player1Started = false;
+  player2Started = false;
 
   requestAnimationFrame(loop);
 }
@@ -44,13 +49,17 @@ function createPlayer(x, y, color, dir) {
 }
 
 function handleKey(key) {
-  // Player 1
+  // Player 1 starts moving on input
+  if (!player1Started) player1Started = true;
+  if (!player2Started && mode === "2p") player2Started = true;
+
+  // Player 1 keys
   if (key === "w" && p1.dir !== "down") p1.dir = "up";
   if (key === "s" && p1.dir !== "up") p1.dir = "down";
   if (key === "a" && p1.dir !== "right") p1.dir = "left";
   if (key === "d" && p1.dir !== "left") p1.dir = "right";
 
-  // Player 2
+  // Player 2 keys
   if (mode === "2p") {
     if (key === "ArrowUp" && p2.dir !== "down") p2.dir = "up";
     if (key === "ArrowDown" && p2.dir !== "up") p2.dir = "down";
@@ -59,14 +68,14 @@ function handleKey(key) {
   }
 }
 
-function movePlayer(p) {
-  // Move in one of four directions
+function movePlayer(p, started) {
+  if (!started || !p.dir) return; // stay still if not started
+
   if (p.dir === "up") p.y -= SPEED;
   if (p.dir === "down") p.y += SPEED;
   if (p.dir === "left") p.x -= SPEED;
   if (p.dir === "right") p.x += SPEED;
 
-  // Add block to trail
   p.trail.push({ x: p.x, y: p.y });
 
   // Wall collision
@@ -74,7 +83,7 @@ function movePlayer(p) {
     endGame(p.color === "cyan" ? "ORANGE WINS" : "CYAN WINS");
   }
 
-  // Trail collision - ignore last block (current head)
+  // Trail collision (ignore last block)
   const allTrails = p1.trail.concat(p2.trail);
   for (let i = 0; i < allTrails.length - 1; i++) {
     const t = allTrails[i];
@@ -84,11 +93,11 @@ function movePlayer(p) {
   }
 }
 
-// Simple AI
+// AI only moves after Player 1 starts
 function moveAI() {
   if (mode !== "1p") return;
+  if (!player1Started) return;
 
-  // AI moves toward player in grid-aligned steps
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
 
@@ -100,6 +109,8 @@ function moveAI() {
     if (dy > 0 && p2.dir !== "up") p2.dir = "down";
     else if (dy < 0 && p2.dir !== "down") p2.dir = "up";
   }
+
+  player2Started = true; // AI now starts
 }
 
 function drawPlayer(p) {
@@ -107,7 +118,7 @@ function drawPlayer(p) {
   for (let block of p.trail) {
     ctx.fillRect(block.x, block.y, SPEED, SPEED);
   }
-  ctx.fillRect(p.x, p.y, SPEED, SPEED);
+  if (p.dir) ctx.fillRect(p.x, p.y, SPEED, SPEED);
 }
 
 function endGame(text) {
@@ -123,11 +134,11 @@ function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   moveAI();
-  movePlayer(p1);
-  movePlayer(p2);
+  movePlayer(p1, player1Started);
+  movePlayer(p2, player2Started);
 
   drawPlayer(p1);
   drawPlayer(p2);
 
-  setTimeout(() => requestAnimationFrame(loop), 50); // slower for grid
+  setTimeout(() => requestAnimationFrame(loop), 50);
 }
