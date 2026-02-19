@@ -24,12 +24,15 @@ const WIN_SCORE = 3;
 let playerColors = { p1: "cyan", p2: "orange" };
 
 // Trail fade settings
-const FADE_SPEED = 0.95; // 0 = instant, 1 = no fade
-const TRAIL_MAX_LENGTH = 100; // max trail segments
+const FADE_SPEED = 0.95;
+const TRAIL_MAX_LENGTH = 100;
 
 // Grid
-const GRID_SIZE = 40; // distance between lines
-let gridOffset = 0;   // for animated movement
+const GRID_SIZE = 40;
+let gridOffset = 0;
+
+// Particles
+let particles = [];
 
 document.addEventListener("keydown", e => {
   if (!gameOver) handleKey(e.key);
@@ -63,6 +66,7 @@ function startRound() {
   gameOver = false;
   player1Started = false;
   player2Started = false;
+  particles = [];
 
   p1 = createPlayer(100, 250, playerColors.p1, null);
   p2 = createPlayer(700, 250, playerColors.p2, null);
@@ -119,16 +123,15 @@ function movePlayer(p, started) {
   if (p.dir === "right") nextX += SPEED;
 
   if (isBlocked(nextX, nextY)) {
+    spawnCrashParticles(p);
     roundOver(p.color === playerColors.p1 ? playerColors.p2 : playerColors.p1);
     return;
   }
 
   p.x = nextX;
   p.y = nextY;
-
-  // Add trail segment with full alpha
   p.trail.push({ x: p.x, y: p.y, alpha: 1 });
-  if (p.trail.length > TRAIL_MAX_LENGTH) p.trail.shift(); // keep trail length limited
+  if (p.trail.length > TRAIL_MAX_LENGTH) p.trail.shift();
 }
 
 // SIMPLE AI
@@ -166,7 +169,7 @@ function moveAI() {
   player2Started = true;
 }
 
-// DRAW PLAYER WITH GLOWING TRAIL
+// DRAW PLAYER WITH GLOW
 function drawPlayer(p) {
   for (let block of p.trail) {
     ctx.fillStyle = p.color;
@@ -174,9 +177,46 @@ function drawPlayer(p) {
     ctx.shadowBlur = 15;
     ctx.shadowColor = p.color;
     ctx.fillRect(block.x, block.y, SPEED*1.2, SPEED*1.2);
-
-    // fade alpha for next frame
     block.alpha *= FADE_SPEED;
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
+// SPAWN CRASH PARTICLES
+function spawnCrashParticles(player) {
+  for (let i=0; i<30; i++) {
+    particles.push({
+      x: player.x + SPEED/2,
+      y: player.y + SPEED/2,
+      vx: (Math.random()-0.5)*6,
+      vy: (Math.random()-0.5)*6,
+      alpha: 1,
+      color: player.color,
+      size: Math.random()*3 + 1
+    });
+  }
+}
+
+// UPDATE PARTICLES
+function updateParticles() {
+  for (let i = particles.length -1; i>=0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.alpha *= 0.95;
+    if (p.alpha < 0.05) particles.splice(i, 1);
+  }
+}
+
+// DRAW PARTICLES
+function drawParticles() {
+  for (let p of particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.alpha;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
   }
   ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
@@ -234,7 +274,6 @@ function showMatchWinner(color) {
 function loop() {
   if (gameOver) return;
 
-  // clear screen
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   drawGrid();
@@ -244,6 +283,9 @@ function loop() {
 
   drawPlayer(p1);
   drawPlayer(p2);
+
+  updateParticles();
+  drawParticles();
 
   drawScore();
 
