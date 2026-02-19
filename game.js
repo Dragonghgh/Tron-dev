@@ -27,9 +27,6 @@ const WIN_SCORE = 3;
 // Player colors
 let playerColors = { p1: "cyan", p2: "orange" };
 
-// Trail length
-const TRAIL_MAX_LENGTH = 100;
-
 // Grid
 const GRID_SIZE = 40;
 let gridOffset = 0;
@@ -133,8 +130,7 @@ function movePlayer(p, started) {
 
   p.x = nextX;
   p.y = nextY;
-  p.trail.push({ x: p.x, y: p.y });
-  if (p.trail.length > TRAIL_MAX_LENGTH) p.trail.shift();
+  p.trail.push({ x: p.x, y: p.y }); // Trails accumulate forever
 }
 
 // MOVE AI (1P) – faster each level
