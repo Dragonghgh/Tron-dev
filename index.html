@@ -14,13 +14,21 @@
 
   <div class="menu-content">
     <h1 class="title">TRON</h1>
-    <button class="btn blue" onclick="startGame('1p')">1 PLAYER</button>
-    <button class="btn orange" onclick="startGame('2p')">2 PLAYER</button>
+    <button class="btn blue" onclick="goToSelect('1p')">1 PLAYER</button>
+    <button class="btn orange" onclick="goToSelect('2p')">2 PLAYER</button>
     <p class="credits">Created by You</p>
   </div>
 </div>
 
-<!-- GAME -->
+<!-- CART / SPEED SELECT -->
+<div id="select">
+  <h2>SELECT SPEED</h2>
+  <button class="btn blue" onclick="startGame(2)">SLOW</button>
+  <button class="btn blue" onclick="startGame(4)">NORMAL</button>
+  <button class="btn blue" onclick="startGame(6)">FAST</button>
+</div>
+
+<!-- GAME CANVAS -->
 <canvas id="gameCanvas" width="800" height="500"></canvas>
 
 <!-- WIN SCREEN -->
