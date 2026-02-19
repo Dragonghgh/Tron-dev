@@ -23,15 +23,14 @@ const WIN_SCORE = 3;
 // Default player colors
 let playerColors = { p1: "cyan", p2: "orange" };
 
-// Trail fade settings
-const FADE_SPEED = 0.95;
+// Trail length
 const TRAIL_MAX_LENGTH = 100;
 
 // Grid
 const GRID_SIZE = 40;
 let gridOffset = 0;
 
-// Particles
+// Particles for crashes
 let particles = [];
 
 document.addEventListener("keydown", e => {
@@ -130,7 +129,7 @@ function movePlayer(p, started) {
 
   p.x = nextX;
   p.y = nextY;
-  p.trail.push({ x: p.x, y: p.y, alpha: 1 });
+  p.trail.push({ x: p.x, y: p.y });
   if (p.trail.length > TRAIL_MAX_LENGTH) p.trail.shift();
 }
 
@@ -169,17 +168,14 @@ function moveAI() {
   player2Started = true;
 }
 
-// DRAW PLAYER WITH GLOW
+// DRAW PLAYER WITH SOLID GLOW
 function drawPlayer(p) {
   for (let block of p.trail) {
     ctx.fillStyle = p.color;
-    ctx.globalAlpha = block.alpha;
     ctx.shadowBlur = 15;
     ctx.shadowColor = p.color;
     ctx.fillRect(block.x, block.y, SPEED*1.2, SPEED*1.2);
-    block.alpha *= FADE_SPEED;
   }
-  ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
 }
 
