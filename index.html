@@ -14,9 +14,18 @@
 
   <div class="menu-content">
     <h1 class="title">TRON</h1>
-    <button class="btn blue" onclick="goToSelect('1p')">1 PLAYER</button>
-    <button class="btn orange" onclick="goToSelect('2p')">2 PLAYER</button>
+    <button class="btn blue" onclick="goToColorSelect('1p')">1 PLAYER</button>
+    <button class="btn orange" onclick="goToColorSelect('2p')">2 PLAYER</button>
     <p class="credits">Created by You</p>
+  </div>
+</div>
+
+<!-- COLOR SELECTION SCREEN -->
+<div id="colorSelect">
+  <h2>SELECT YOUR COLOR</h2>
+  <div class="color-options">
+    <button class="color-btn cyan" onclick="chooseColor('cyan')">CYAN</button>
+    <button class="color-btn orange" onclick="chooseColor('orange')">ORANGE</button>
   </div>
 </div>
 
