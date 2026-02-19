@@ -173,10 +173,11 @@ function roundOver(winnerColor) {
 function drawScore() {
   ctx.font = "24px Arial";
   ctx.fillStyle = playerColors.p1;
-  ctx.fillText(`Player 1: ${score1}`, 20, canvas.height / 2 - 20);
+  ctx.fillText(`Player 1: ${score1}`, 20, 30); // Top-left corner
   ctx.fillStyle = playerColors.p2;
-  ctx.fillText(`Player 2: ${score2}`, canvas.width - 140, canvas.height / 2 - 20);
+  ctx.fillText(`Player 2: ${score2}`, canvas.width - 140, 30); // Top-right corner
 }
+
 
 // Match winner
 function showMatchWinner(color) {
