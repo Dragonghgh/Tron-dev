@@ -15,25 +15,34 @@ let p1, p2;
 let player1Started = false;
 let player2Started = false;
 
+// Scores
 let score1 = 0;
 let score2 = 0;
-const WIN_SCORE = 3; // match limit
+const WIN_SCORE = 3;
 
-// Default colors
+// Default player colors
 let playerColors = { p1: "cyan", p2: "orange" };
+
+// Trail fade settings
+const FADE_SPEED = 0.95; // 0 = instant, 1 = no fade
+const TRAIL_MAX_LENGTH = 100; // max trail segments
+
+// Grid
+const GRID_SIZE = 40; // distance between lines
+let gridOffset = 0;   // for animated movement
 
 document.addEventListener("keydown", e => {
   if (!gameOver) handleKey(e.key);
 });
 
-// Menu → Color Selection
+// MENU → COLOR SELECT
 function goToColorSelect(selectedMode) {
   mode = selectedMode;
   menu.style.display = "none";
   colorSelect.style.display = "flex";
 }
 
-// Choose color
+// COLOR CHOICE
 function chooseColor(color) {
   playerColors.p1 = color;
   playerColors.p2 = color === "cyan" ? "orange" : "cyan";
@@ -41,7 +50,7 @@ function chooseColor(color) {
   select.style.display = "flex";
 }
 
-// Start game after speed select
+// START GAME
 function startGame(speed) {
   SPEED = speed;
   select.style.display = "none";
@@ -49,7 +58,7 @@ function startGame(speed) {
   startRound();
 }
 
-// Initialize a round
+// START ROUND
 function startRound() {
   gameOver = false;
   player1Started = false;
@@ -62,22 +71,23 @@ function startRound() {
   requestAnimationFrame(loop);
 }
 
-// Create player object
+// CREATE PLAYER
 function createPlayer(x, y, color, dir) {
   return { x, y, color, dir, trail: [] };
 }
 
+// KEY HANDLER
 function handleKey(key) {
   if (!player1Started) player1Started = true;
   if (!player2Started && mode === "2p") player2Started = true;
 
-  // Player 1 controls
+  // Player 1
   if (key === "w" && p1.dir !== "down") p1.dir = "up";
   if (key === "s" && p1.dir !== "up") p1.dir = "down";
   if (key === "a" && p1.dir !== "right") p1.dir = "left";
   if (key === "d" && p1.dir !== "left") p1.dir = "right";
 
-  // Player 2 controls
+  // Player 2
   if (mode === "2p") {
     if (key === "ArrowUp" && p2.dir !== "down") p2.dir = "up";
     if (key === "ArrowDown" && p2.dir !== "up") p2.dir = "down";
@@ -86,7 +96,7 @@ function handleKey(key) {
   }
 }
 
-// Check if a cell is blocked (trail/wall)
+// CHECK COLLISION
 function isBlocked(x, y) {
   if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
   const allTrails = p1.trail.concat(p2.trail);
@@ -96,11 +106,12 @@ function isBlocked(x, y) {
   return false;
 }
 
-// Move player each step
+// MOVE PLAYER
 function movePlayer(p, started) {
   if (!started || !p.dir) return;
 
-  let nextX = p.x, nextY = p.y;
+  let nextX = p.x;
+  let nextY = p.y;
 
   if (p.dir === "up") nextY -= SPEED;
   if (p.dir === "down") nextY += SPEED;
@@ -114,10 +125,13 @@ function movePlayer(p, started) {
 
   p.x = nextX;
   p.y = nextY;
-  p.trail.push({ x: p.x, y: p.y });
+
+  // Add trail segment with full alpha
+  p.trail.push({ x: p.x, y: p.y, alpha: 1 });
+  if (p.trail.length > TRAIL_MAX_LENGTH) p.trail.shift(); // keep trail length limited
 }
 
-// Simple AI with trail avoidance
+// SIMPLE AI
 function moveAI() {
   if (mode !== "1p") return;
   if (!player1Started) return;
@@ -127,7 +141,8 @@ function moveAI() {
 
   let preferredDir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
 
-  let nextX = p2.x, nextY = p2.y;
+  let nextX = p2.x;
+  let nextY = p2.y;
   if (preferredDir === "up") nextY -= SPEED;
   if (preferredDir === "down") nextY += SPEED;
   if (preferredDir === "left") nextX -= SPEED;
@@ -151,14 +166,44 @@ function moveAI() {
   player2Started = true;
 }
 
-// Draw player and trail
+// DRAW PLAYER WITH GLOWING TRAIL
 function drawPlayer(p) {
-  ctx.fillStyle = p.color;
-  for (let block of p.trail) ctx.fillRect(block.x, block.y, SPEED, SPEED);
-  if (p.dir) ctx.fillRect(p.x, p.y, SPEED, SPEED);
+  for (let block of p.trail) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = block.alpha;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = p.color;
+    ctx.fillRect(block.x, block.y, SPEED*1.2, SPEED*1.2);
+
+    // fade alpha for next frame
+    block.alpha *= FADE_SPEED;
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
 }
 
-// End of round
+// DRAW TRON GRID
+function drawGrid() {
+  ctx.strokeStyle = "rgba(0,255,255,0.05)";
+  ctx.lineWidth = 1;
+  gridOffset += 0.5;
+  if (gridOffset >= GRID_SIZE) gridOffset = 0;
+
+  for (let x = -GRID_SIZE + gridOffset; x < canvas.width; x += GRID_SIZE) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = -GRID_SIZE + gridOffset; y < canvas.height; y += GRID_SIZE) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+}
+
+// ROUND OVER
 function roundOver(winnerColor) {
   gameOver = true;
   if (winnerColor === playerColors.p1) score1++;
@@ -169,36 +214,38 @@ function roundOver(winnerColor) {
   else setTimeout(startRound, 1000);
 }
 
-// Draw scores on arena sides
+// DRAW SCORE ON TOP
 function drawScore() {
   ctx.font = "24px Arial";
   ctx.fillStyle = playerColors.p1;
-  ctx.fillText(`Player 1: ${score1}`, 20, 30); // Top-left corner
+  ctx.fillText(`Player 1: ${score1}`, 20, 30);
   ctx.fillStyle = playerColors.p2;
-  ctx.fillText(`Player 2: ${score2}`, canvas.width - 140, 30); // Top-right corner
+  ctx.fillText(`Player 2: ${score2}`, canvas.width - 140, 30);
 }
 
-
-// Match winner
+// MATCH WINNER
 function showMatchWinner(color) {
   canvas.style.display = "none";
   winScreen.style.display = "flex";
   winnerText.textContent = `${color.toUpperCase()} WINS THE MATCH!`;
 }
 
-// Main loop
+// MAIN LOOP
 function loop() {
   if (gameOver) return;
 
+  // clear screen
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  drawGrid();
   moveAI();
   movePlayer(p1, player1Started);
   movePlayer(p2, player2Started);
 
   drawPlayer(p1);
   drawPlayer(p2);
+
   drawScore();
 
-  setTimeout(() => requestAnimationFrame(loop), 50);
+  requestAnimationFrame(loop);
 }
