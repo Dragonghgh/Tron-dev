@@ -2,15 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Neon Arena</title>
+  <title>TRON ARENA</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="menu">
-  <h1>NEON ARENA</h1>
-  <button onclick="startGame('1p')">1 Player (vs AI)</button>
-  <button onclick="startGame('2p')">2 Player</button>
+  <div class="line blue"></div>
+  <div class="line orange"></div>
+
+  <div class="menu-content">
+    <h1 class="title">TRON</h1>
+
+    <button onclick="startGame('1p')">1 PLAYER</button>
+    <button onclick="startGame('2p')">2 PLAYER</button>
+
+    <p class="credits">Created by You</p>
+  </div>
 </div>
 
 <canvas id="gameCanvas" width="800" height="500"></canvas>
