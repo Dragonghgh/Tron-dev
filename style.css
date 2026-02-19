@@ -7,8 +7,8 @@ body {
   text-align: center;
 }
 
-/* MENU */
-#menu {
+/* SCREENS */
+#menu, #select, #win {
   position: fixed;
   inset: 0;
   display: flex;
@@ -16,6 +16,10 @@ body {
   align-items: center;
   flex-direction: column;
   background: black;
+}
+
+#select, #win {
+  display: none;
 }
 
 /* NEON LINES */
