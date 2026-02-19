@@ -2,6 +2,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 const menu = document.getElementById("menu");
+const colorSelect = document.getElementById("colorSelect");
 const select = document.getElementById("select");
 const winScreen = document.getElementById("win");
 const winnerText = document.getElementById("winnerText");
@@ -14,21 +15,33 @@ let p1, p2;
 let player1Started = false;
 let player2Started = false;
 
-// Scores
 let score1 = 0;
 let score2 = 0;
-const WIN_SCORE = 3; // First to 3 wins match
+const WIN_SCORE = 3; // match limit
+
+// Default colors
+let playerColors = { p1: "cyan", p2: "orange" };
 
 document.addEventListener("keydown", e => {
   if (!gameOver) handleKey(e.key);
 });
 
-function goToSelect(selectedMode) {
+// Menu → Color Selection
+function goToColorSelect(selectedMode) {
   mode = selectedMode;
   menu.style.display = "none";
+  colorSelect.style.display = "flex";
+}
+
+// Choose color
+function chooseColor(color) {
+  playerColors.p1 = color;
+  playerColors.p2 = color === "cyan" ? "orange" : "cyan";
+  colorSelect.style.display = "none";
   select.style.display = "flex";
 }
 
+// Start game after speed select
 function startGame(speed) {
   SPEED = speed;
   select.style.display = "none";
@@ -36,39 +49,35 @@ function startGame(speed) {
   startRound();
 }
 
+// Initialize a round
 function startRound() {
   gameOver = false;
   player1Started = false;
   player2Started = false;
 
-  // Reset positions and trails
-  p1 = createPlayer(100, 250, "cyan", null);
-  p2 = createPlayer(700, 250, "orange", null);
+  p1 = createPlayer(100, 250, playerColors.p1, null);
+  p2 = createPlayer(700, 250, playerColors.p2, null);
 
   drawScore();
   requestAnimationFrame(loop);
 }
 
+// Create player object
 function createPlayer(x, y, color, dir) {
-  return {
-    x, y,
-    color,
-    dir,
-    trail: []
-  };
+  return { x, y, color, dir, trail: [] };
 }
 
 function handleKey(key) {
   if (!player1Started) player1Started = true;
   if (!player2Started && mode === "2p") player2Started = true;
 
-  // Player 1
+  // Player 1 controls
   if (key === "w" && p1.dir !== "down") p1.dir = "up";
   if (key === "s" && p1.dir !== "up") p1.dir = "down";
   if (key === "a" && p1.dir !== "right") p1.dir = "left";
   if (key === "d" && p1.dir !== "left") p1.dir = "right";
 
-  // Player 2
+  // Player 2 controls
   if (mode === "2p") {
     if (key === "ArrowUp" && p2.dir !== "down") p2.dir = "up";
     if (key === "ArrowDown" && p2.dir !== "up") p2.dir = "down";
@@ -77,6 +86,7 @@ function handleKey(key) {
   }
 }
 
+// Check if a cell is blocked (trail/wall)
 function isBlocked(x, y) {
   if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return true;
   const allTrails = p1.trail.concat(p2.trail);
@@ -86,11 +96,11 @@ function isBlocked(x, y) {
   return false;
 }
 
+// Move player each step
 function movePlayer(p, started) {
   if (!started || !p.dir) return;
 
-  let nextX = p.x;
-  let nextY = p.y;
+  let nextX = p.x, nextY = p.y;
 
   if (p.dir === "up") nextY -= SPEED;
   if (p.dir === "down") nextY += SPEED;
@@ -98,7 +108,7 @@ function movePlayer(p, started) {
   if (p.dir === "right") nextX += SPEED;
 
   if (isBlocked(nextX, nextY)) {
-    roundOver(p.color === "cyan" ? "ORANGE" : "CYAN");
+    roundOver(p.color === playerColors.p1 ? playerColors.p2 : playerColors.p1);
     return;
   }
 
@@ -107,6 +117,7 @@ function movePlayer(p, started) {
   p.trail.push({ x: p.x, y: p.y });
 }
 
+// Simple AI with trail avoidance
 function moveAI() {
   if (mode !== "1p") return;
   if (!player1Started) return;
@@ -114,83 +125,67 @@ function moveAI() {
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
 
-  let preferredDir;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    preferredDir = dx > 0 ? "right" : "left";
-  } else {
-    preferredDir = dy > 0 ? "down" : "up";
-  }
+  let preferredDir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
 
-  // Check if preferred direction is blocked
-  let nextX = p2.x;
-  let nextY = p2.y;
+  let nextX = p2.x, nextY = p2.y;
   if (preferredDir === "up") nextY -= SPEED;
   if (preferredDir === "down") nextY += SPEED;
   if (preferredDir === "left") nextX -= SPEED;
   if (preferredDir === "right") nextX += SPEED;
 
-  if (!isBlocked(nextX, nextY)) {
-    p2.dir = preferredDir;
-  } else {
+  if (!isBlocked(nextX, nextY)) p2.dir = preferredDir;
+  else {
     const dirs = ["up","right","down","left"];
     let idx = dirs.indexOf(p2.dir);
     for (let i=1;i<=3;i++) {
       const testDir = dirs[(idx+i)%4];
-      let tx = p2.x;
-      let ty = p2.y;
+      let tx = p2.x, ty = p2.y;
       if (testDir === "up") ty -= SPEED;
       if (testDir === "down") ty += SPEED;
       if (testDir === "left") tx -= SPEED;
       if (testDir === "right") tx += SPEED;
-      if (!isBlocked(tx, ty)) {
-        p2.dir = testDir;
-        break;
-      }
+      if (!isBlocked(tx, ty)) { p2.dir = testDir; break; }
     }
   }
 
   player2Started = true;
 }
 
+// Draw player and trail
 function drawPlayer(p) {
   ctx.fillStyle = p.color;
-  for (let block of p.trail) {
-    ctx.fillRect(block.x, block.y, SPEED, SPEED);
-  }
+  for (let block of p.trail) ctx.fillRect(block.x, block.y, SPEED, SPEED);
   if (p.dir) ctx.fillRect(p.x, p.y, SPEED, SPEED);
 }
 
-// Round ends, update score
+// End of round
 function roundOver(winnerColor) {
   gameOver = true;
-  if (winnerColor === "CYAN") score1++;
+  if (winnerColor === playerColors.p1) score1++;
   else score2++;
 
-  drawScore();
-
-  if (score1 >= WIN_SCORE) showMatchWinner("CYAN");
-  else if (score2 >= WIN_SCORE) showMatchWinner("ORANGE");
-  else {
-    // Reset round after 1 second
-    setTimeout(startRound, 1000);
-  }
+  if (score1 >= WIN_SCORE) showMatchWinner(playerColors.p1);
+  else if (score2 >= WIN_SCORE) showMatchWinner(playerColors.p2);
+  else setTimeout(startRound, 1000);
 }
 
+// Draw scores on arena sides
 function drawScore() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.font = "24px Arial";
-  ctx.fillStyle = "cyan";
-  ctx.fillText(`CYAN: ${score1}`, 20, 30);
-  ctx.fillStyle = "orange";
-  ctx.fillText(`ORANGE: ${score2}`, canvas.width - 120, 30);
+  ctx.fillStyle = playerColors.p1;
+  ctx.fillText(`Player 1: ${score1}`, 20, canvas.height / 2 - 20);
+  ctx.fillStyle = playerColors.p2;
+  ctx.fillText(`Player 2: ${score2}`, canvas.width - 140, canvas.height / 2 - 20);
 }
 
+// Match winner
 function showMatchWinner(color) {
   canvas.style.display = "none";
   winScreen.style.display = "flex";
-  winnerText.textContent = `${color} WINS THE MATCH!`;
+  winnerText.textContent = `${color.toUpperCase()} WINS THE MATCH!`;
 }
 
+// Main loop
 function loop() {
   if (gameOver) return;
 
@@ -202,13 +197,7 @@ function loop() {
 
   drawPlayer(p1);
   drawPlayer(p2);
-
-  // Draw score each frame
-  ctx.font = "24px Arial";
-  ctx.fillStyle = "cyan";
-  ctx.fillText(`CYAN: ${score1}`, 20, 30);
-  ctx.fillStyle = "orange";
-  ctx.fillText(`ORANGE: ${score2}`, canvas.width - 120, 30);
+  drawScore();
 
   setTimeout(() => requestAnimationFrame(loop), 50);
 }
