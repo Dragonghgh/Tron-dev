@@ -2,24 +2,20 @@ body {
   margin: 0;
   background: black;
   font-family: Arial, sans-serif;
+  overflow: hidden;
   color: cyan;
   text-align: center;
-  overflow: hidden;
 }
 
-/* SCREENS */
-#menu, #select, #win {
+/* MENU */
+#menu {
   position: fixed;
   inset: 0;
-  background: black;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-}
-
-#select, #win {
-  display: none;
+  flex-direction: column;
+  background: black;
 }
 
 /* NEON LINES */
@@ -77,4 +73,7 @@ canvas {
 #winnerText {
   font-size: 60px;
   text-shadow: 0 0 25px cyan;
+}
+#winnerText + .btn {
+  margin-top: 20px;
 }
